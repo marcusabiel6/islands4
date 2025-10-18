@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>islands (multiplayer soon!!)</title>
+<style>
+  body { 
+    font-family: sans-serif; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    margin: 20px; 
+  }
+  table { border-collapse: collapse; margin-bottom: 50px; }
+  td {
+    width: 60px; height: 60px;
+    border: 1px solid black;
+    text-align: center;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  td.red { background-color: lightcoral; }
+  td.blue { background-color: lightblue; }
+  #howtoplay {
+    max-width: 500px;
+    margin-top: 50px;
+    padding: 20px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    background-color: #f0f0f0;
+  }
+  #howtoplay h2 {
+    margin-top: 0;
+  }
+</style>
+</head>
+<body>
+<h1>islands (multiplayer soon!!)</h1>
+<table id="board"></table>
+<p id="status">current player: red | red islands: 0 | blue islands: 0</p>
+
+<div id="howtoplay">
+  <h2>how to play</h2>
+  <p>islands is a two-player territory game on a 6x6 board. red goes first.</p>
+  <ul>
+    <li>each player takes turns clicking empty squares.</li>
+    <li>you can only claim squares that are adjacent to your existing islands.</li>
+    <li>the goal is to have more islands than your opponent when no more moves are possible.</li>
+    <li>the game ends automatically when no valid moves are left for either player.</li>
+    <li>the player with fewer islands loses; equal number of islands results in a tie.</li>
+    <li>strategically expand and block your opponent to win!</li>
+  </ul>
+</div>
+
+<script>
+const size = 6;
+let board = Array(size).fill(null).map(() => Array(size).fill(''));
+let currentPlayer = 'red';
+
+const table = document.getElementById('board');
+
+function createBoard() {
+  table.innerHTML = '';
+  for (let i = 0; i < size; i++) {
+    let row = table.insertRow();
+    for (let j = 0; j < size; j++) {
+      let cell = row.insertCell();
+      cell.className = board[i][j];
+      cell.addEventListener('click', () => makeMove(i,j));
+      cell.textContent = '';
+    }
+  }
+  updateStatus();
+}
+
+function countIslands(player) {
+  return board.flat().filter(c => c === player).length;
+}
+
+function isValidMove(i,j) {
+  if (board[i][j] !== '') return false;
+  if (!board.flat().some(x => x === currentPlayer)) return true; // first move anywhere
+  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+  return dirs.some(([di,dj]) => {
+    let ni = i + di, nj = j + dj;
+    return ni >=0 && ni<size && nj>=0 && nj<size && board[ni][nj] === currentPlayer;
+  });
+}
+
+function makeMove(i,j) {
+  if (!isValidMove(i,j)) return;
+
+  board[i][j] = currentPlayer;
+  currentPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+  createBoard();
+  checkEndGame();
+}
+
+function updateStatus() {
+  const redCount = countIslands('red');
+  const blueCount = countIslands('blue');
+  document.getElementById('status').textContent = 
+    `current player: ${currentPlayer} | red islands: ${redCount} | blue islands: ${blueCount}`;
+}
+
+function checkEndGame() {
+  const movesLeft = board.flat().some((cell, idx) => {
+    let i = Math.floor(idx/size), j = idx%size;
+    return isValidMove(i,j);
+  });
+  if (!movesLeft) {
+    const redCount = countIslands('red');
+    const blueCount = countIslands('blue');
+    document.getElementById('status').textContent =
+      redCount === blueCount ? 
+      `tie! red: ${redCount}, blue: ${blueCount}` :
+      `winner: ${redCount > blueCount ? 'red' : 'blue'} (red: ${redCount}, blue: ${blueCount})`;
+  }
+}
+
+createBoard();
+</script>
+</body>
+</html>
